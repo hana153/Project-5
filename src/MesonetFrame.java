@@ -127,6 +127,12 @@ public class MesonetFrame extends JFrame
         return st;
     }
     
+    /**
+     * This method calculates the amount of stations that have the same Hamming dist as the given station
+     * @param station the stations that the HD should be calculated for
+     * @param nodes the number of nodes to be calculated for
+     * @return int the number of stations that have the same number of nodes as the gievn station
+     */
     public int entireHammingDist(String station, int nodes) 
     {
         int count = 0;
@@ -170,7 +176,7 @@ public class MesonetFrame extends JFrame
     }
     
     /**
-     * creates the list needed to put the stations into the combo list
+     * Creates the list needed to put the stations into the combo list
      * @return DefaultComboBoxModel<String> holds the string values to go in the drop box
      */
     private DefaultComboBoxModel<String> getComboBoxModel(String addedStation)
