@@ -1,10 +1,11 @@
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
@@ -14,6 +15,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -37,7 +39,7 @@ public class MesonetFrame extends JFrame
     private String[] stations;
     
     /** variables for the large display section of the frame */
-    private JTextField display = new JTextField();
+    private JTextArea display = new JTextArea();
     private JScrollPane displayScroll = new JScrollPane(display);
     
     /** variables for the buttons on the frame */
@@ -63,6 +65,7 @@ public class MesonetFrame extends JFrame
     private JComboBox<String> dropDown = new JComboBox<String>();
     
     /** variables for the right section of ascii values */
+    private JButton ascii = new JButton("Show ascii calculations");
     private JLabel ceil = new JLabel("Ascii Ceiling is:");
     private JLabel flo = new JLabel("Ascii Floor is:");
     private JLabel avg = new JLabel("Ascii Average is:");
@@ -73,11 +76,11 @@ public class MesonetFrame extends JFrame
     private JTextField chrVal = new JTextField(1);
 
     /**
-     * This method find which stations match the given HD and place them into a string array to be displayed
-     * @param station the station to which the HD shoud match
+     * This method finds which stations match the given HD and place them into a string array to be displayed
+     * @param station the station to which the HD should match
      * @return String[] array of the stations that match the given HD
      */
-    public String[] HammingDist(String station)
+    public String[] hammingDist(String station)
     {
         int count = 0;
         int totalCount = 0;
@@ -121,7 +124,31 @@ public class MesonetFrame extends JFrame
             }
         }
        
-        return null;
+        return st;
+    }
+    
+    public int entireHammingDist(String station, int nodes) 
+    {
+        int count = 0;
+        int totalCount = 0;
+        
+        //these for loops count how many words have the same distance needed
+        for (int i = 0; i < stations.length; ++i) {
+            if (station.equals(stations[i])) {
+            }
+            else {
+                for (int j = 0; j < station.length(); ++j) {
+                    if(station.charAt(j) != (stations[i]).charAt(j)) {
+                        ++count;
+                    }
+                }
+                if (count == nodes) {
+                    ++totalCount;
+                }
+                count = 0;
+            }
+        }
+        return totalCount;
     }
     
     /**
@@ -146,12 +173,21 @@ public class MesonetFrame extends JFrame
      * creates the list needed to put the stations into the combo list
      * @return DefaultComboBoxModel<String> holds the string values to go in the drop box
      */
-    private DefaultComboBoxModel<String> getComboBoxModel()
+    private DefaultComboBoxModel<String> getComboBoxModel(String addedStation)
     {
         ArrayList<String> displayNames = new ArrayList<String>();
         for (int i = 0; i < stations.length; ++i)
         {
             displayNames.add(stations[i]);
+        }
+        if(addedStation != null)
+        {
+            if(!displayNames.contains(addedStation))
+            {
+                displayNames.add(addedStation); 
+                Collections.sort(displayNames);
+            }
+           
         }
         String[] comboBoxModel = displayNames.toArray(new String[displayNames.size()]);
         return new DefaultComboBoxModel<>(comboBoxModel);
@@ -233,23 +269,78 @@ public class MesonetFrame extends JFrame
         sliderText.setEditable(false);
         slider.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent event) {
-              int value = slider.getValue();
-              sliderText.setText(Integer.toString(value));
+              sliderVal = slider.getValue();
+              sliderText.setText(Integer.toString(sliderVal));
             }
           });
-        sliderVal = slider.getValue();
+        
+        
+        // making HD values and large display box not editable
+        hd0.setEditable(false);
+        hd1.setEditable(false);
+        hd2.setEditable(false);
+        hd3.setEditable(false);
+        hd4.setEditable(false);
+        display.setEditable(false);
         
         // creating the drop down menu
-        DefaultComboBoxModel<String> comboBoxModel = getComboBoxModel();
+        DefaultComboBoxModel<String> comboBoxModel = getComboBoxModel(null);
         dropDown.setModel(comboBoxModel);
         dropDown.setSelectedIndex(0);
         
-        // TODO: using the drop down menu values and slider values to display stations
-        show.addActionListener((e) -> {
-              sliderVal = slider.getValue();
-          });
+        // making average values not editable 
+        ceilVal.setEditable(false);
+        floVal.setEditable(false);
+        avgVal.setEditable(false);
+        chrVal.setEditable(false);
         
-        // TODO: generating ascii values and displaying them
+        // result of pushing the show station button
+        show.addActionListener(new ActionListener() { 
+            public void actionPerformed(ActionEvent e) { 
+                String[] print = hammingDist(dropDown.getSelectedItem().toString());
+                String pt = "";
+                for (int i = 0; i < print.length; ++i)
+                {
+                    pt += print[i] + "\n";
+                }
+                display.setText(pt);
+            } 
+        });
+        
+        // result of pushing calculate HD button
+        calculate.addActionListener(new ActionListener() { 
+            public void actionPerformed(ActionEvent e) { 
+                hd0.setText(Integer.toString((entireHammingDist(dropDown.getSelectedItem().toString(), 0))));
+                hd1.setText(Integer.toString((entireHammingDist(dropDown.getSelectedItem().toString(), 1))));
+                hd2.setText(Integer.toString((entireHammingDist(dropDown.getSelectedItem().toString(), 2))));
+                hd3.setText(Integer.toString((entireHammingDist(dropDown.getSelectedItem().toString(), 3))));
+                hd4.setText(Integer.toString((entireHammingDist(dropDown.getSelectedItem().toString(), 4))));
+            } 
+        });
+        
+        // result of pushing add station button
+        add.addActionListener(new ActionListener() { 
+            public void actionPerformed(ActionEvent e) { 
+                String st2 = (added.getText()).toUpperCase();
+                st2 = st2.substring(0, 4);
+                DefaultComboBoxModel<String> comboBoxModel2 = getComboBoxModel(st2);
+                dropDown.setModel(comboBoxModel2);
+                dropDown.setSelectedIndex(0);
+            } 
+        });
+        
+        // result of pushing ascii calculate button
+        ascii.addActionListener(new ActionListener() { 
+            public void actionPerformed(ActionEvent e) { 
+                int[] vals = calAverage((dropDown.getSelectedItem()).toString());
+                char val = letterAverage((dropDown.getSelectedItem()).toString());
+                ceilVal.setText(Integer.toString(vals[0]));
+                floVal.setText(Integer.toString(vals[1]));
+                avgVal.setText(Integer.toString(vals[2]));
+                chrVal.setText(Character.toString(val));
+            } 
+        });
+        
 
         // adding slider portion to panel     
         JPanel sliderTexts = new JPanel();
@@ -264,6 +355,7 @@ public class MesonetFrame extends JFrame
         
         // adding the display area to the panel
         JPanel displayBox = new JPanel(new GridLayout(1, 1));
+        displayScroll.createVerticalScrollBar();
         displayBox.add(displayScroll);
         
         // adding combo box to panel
@@ -302,24 +394,21 @@ public class MesonetFrame extends JFrame
         leftPanel.add(hamDist);
         
         // adding components to right panel
-        JPanel r1 = new JPanel();
+        JPanel r0 = new JPanel();
+        r0.add(ascii);
+        JPanel r1 = new JPanel(new GridLayout(4, 2));
         r1.add(ceil);
         r1.add(ceilVal);
-        JPanel r2 = new JPanel();
-        r2.add(flo);
-        r2.add(floVal);
-        JPanel r3 = new JPanel();
-        r3.add(avg);
-        r3.add(avgVal);
-        JPanel r4 = new JPanel();
-        r4.add(chr);
-        r4.add(chrVal);
+        r1.add(flo);
+        r1.add(floVal);
+        r1.add(avg);
+        r1.add(avgVal);
+        r1.add(chr);
+        r1.add(chrVal);
         
         // adding smaller panels to right panel
+        rightPanel.add(r0);
         rightPanel.add(r1);
-        rightPanel.add(r2);
-        rightPanel.add(r3);
-        rightPanel.add(r4);
         
         // adding side panels to main panel
         mainPanel.add(leftPanel);
